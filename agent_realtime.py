@@ -1,121 +1,59 @@
 """
-OpenAI Agent SDK Example: Realtime Agent
-Demonstrates a realtime voice/text agent with streaming capabilities
+OpenAI Agent SDK Example: Streaming Agent
+Demonstrates an agent with streaming text responses
 """
 
 import asyncio
 import os
 from openai import AsyncOpenAI
-from agents.realtime import RealtimeAgent, RealtimeRunner
-
-
-async def run_realtime_agent():
-    """Run a realtime agent with voice capabilities"""
-
-    print("Realtime Agent Example")
-    print("-" * 50)
-
-    # Create realtime agent
-    agent = RealtimeAgent(
-        name="Voice Assistant",
-        instructions="""You are a helpful voice assistant.
-        Respond naturally and conversationally.
-        Keep responses concise and friendly.
-        You can help with questions, calculations, and general assistance."""
-    )
-
-    # Configure runner with realtime settings
-    runner = RealtimeRunner(
-        starting_agent=agent,
-        config={
-            "model_settings": {
-                "model_name": "gpt-4o-realtime-preview",
-                "voice": "alloy",
-                "modalities": ["text", "audio"],
-                "temperature": 0.8
-            },
-            "turn_detection": {
-                "type": "server_vad",
-                "threshold": 0.5,
-                "silence_duration_ms": 500
-            }
-        }
-    )
-
-    print("Realtime Agent initialized successfully!")
-    print("Starting session...")
-    print("-" * 50)
-
-    try:
-        # Start the realtime session
-        session = await runner.run()
-
-        # Example: Send text messages in realtime mode
-        test_messages = [
-            "Hello! Can you hear me?",
-            "What's 25 multiplied by 4?",
-            "Tell me a fun fact about space."
-        ]
-
-        async with session:
-            for message in test_messages:
-                print(f"\nUser: {message}")
-                print("Agent: ", end="", flush=True)
-
-                # Send message and process response
-                await session.send_text(message)
-
-                # Listen for response events
-                collected_text = ""
-                async for event in session:
-                    if event.type == "response.text.delta":
-                        text_chunk = event.delta
-                        print(text_chunk, end="", flush=True)
-                        collected_text += text_chunk
-                    elif event.type == "response.done":
-                        print()
-                        break
-
-                print("-" * 50)
-
-        return "Realtime agent completed successfully"
-
-    except Exception as e:
-        return f"Realtime agent error: {str(e)}"
+from agents import Agent, Runner
 
 
 async def run_realtime_simple():
-    """Simplified realtime agent for testing without audio I/O"""
+    """Run an agent with streaming capabilities"""
 
-    print("Simplified Realtime Agent (Text Mode)")
+    print("Streaming Agent Example")
     print("-" * 50)
 
     # Initialize OpenAI client
     client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-    # Create a simple realtime-capable agent
-    agent = RealtimeAgent(
-        name="Text Assistant",
-        instructions="You are a helpful assistant. Respond concisely and clearly."
+    # Create agent with streaming
+    agent = Agent(
+        name="Streaming Assistant",
+        instructions="""You are a helpful assistant that responds with streaming text.
+        Respond naturally and conversationally.
+        Keep responses concise and friendly.
+        You can help with questions, calculations, and general assistance.""",
+        model="gpt-4o"
     )
 
-    print("Agent initialized successfully!")
-    print("Note: This is a text-mode demonstration of realtime capabilities.")
+    # Create runner
+    runner = Runner(client=client, agent=agent)
+
+    print("Streaming Agent initialized successfully!")
+    print("Demonstrating real-time streaming responses...")
     print("-" * 50)
 
-    # Simple conversation flow
-    conversation = [
-        "Hi there!",
-        "What can you help me with?",
-        "Thanks for the information!"
+    # Example queries to demonstrate streaming
+    queries = [
+        "Hello! Tell me about yourself.",
+        "What's 25 multiplied by 4?",
+        "Tell me a fun fact about space."
     ]
 
-    for msg in conversation:
-        print(f"\nUser: {msg}")
-        print(f"Agent: Processing realtime response...")
-        print("-" * 50)
+    for query in queries:
+        print(f"\nUser: {query}")
+        print("Agent: ", end="", flush=True)
 
-    return "Realtime agent demonstration completed"
+        # Run agent with streaming
+        async with runner.run_stream(query) as stream:
+            async for chunk in stream.text_stream():
+                print(chunk, end="", flush=True)
+
+        print("\n" + "-" * 50)
+
+    return "Streaming agent demonstration completed"
 
 
 if __name__ == "__main__":

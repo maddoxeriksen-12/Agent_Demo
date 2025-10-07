@@ -8,34 +8,25 @@ import os
 import json
 from typing import Dict, Any
 from openai import AsyncOpenAI
-from agents import Agent, Runner
-from agents.tools import FunctionTool, ToolContext
+from agents import Agent, Runner, function_tool
 from pydantic import BaseModel, Field
 
 
-# Define a Pydantic model for structured arguments
-class CalculatorArgs(BaseModel):
-    """Arguments for calculator operations"""
-    operation: str = Field(description="The operation to perform: add, subtract, multiply, divide")
-    num1: float = Field(description="First number")
-    num2: float = Field(description="Second number")
+# Custom function implementations using @function_tool decorator
+@function_tool
+def calculator(operation: str, num1: float, num2: float) -> str:
+    """Perform basic arithmetic operations (add, subtract, multiply, divide)
 
+    Args:
+        operation: The operation to perform: add, subtract, multiply, divide
+        num1: First number
+        num2: Second number
 
-class WeatherArgs(BaseModel):
-    """Arguments for weather lookup"""
-    location: str = Field(description="City name or location")
-    units: str = Field(default="fahrenheit", description="Temperature units: fahrenheit or celsius")
-
-
-# Custom function implementations
-async def calculator_function(ctx: ToolContext, args: str) -> str:
-    """Perform basic calculator operations"""
+    Returns:
+        JSON string with the calculation result
+    """
     try:
-        parsed_args = CalculatorArgs.model_validate_json(args)
-
-        num1 = parsed_args.num1
-        num2 = parsed_args.num2
-        operation = parsed_args.operation.lower()
+        operation = operation.lower()
 
         if operation == "add":
             result = num1 + num2
@@ -60,16 +51,23 @@ async def calculator_function(ctx: ToolContext, args: str) -> str:
         return f"Error: {str(e)}"
 
 
-async def get_weather(ctx: ToolContext, args: str) -> str:
-    """Simulate getting weather information (mock function)"""
-    try:
-        parsed_args = WeatherArgs.model_validate_json(args)
+@function_tool
+def get_weather(location: str, units: str = "fahrenheit") -> str:
+    """Get current weather information for a location
 
+    Args:
+        location: City name or location
+        units: Temperature units: fahrenheit or celsius (default: fahrenheit)
+
+    Returns:
+        JSON string with weather data
+    """
+    try:
         # Mock weather data
         weather_data = {
-            "location": parsed_args.location,
-            "temperature": 72 if parsed_args.units == "fahrenheit" else 22,
-            "units": parsed_args.units,
+            "location": location,
+            "temperature": 72 if units == "fahrenheit" else 22,
+            "units": units,
             "condition": "Sunny",
             "humidity": 65,
             "wind_speed": 10
@@ -86,21 +84,6 @@ async def run_function_tools_agent():
     # Initialize OpenAI client
     client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
-    # Create custom function tools
-    calculator_tool = FunctionTool(
-        name="calculator",
-        description="Perform basic arithmetic operations (add, subtract, multiply, divide)",
-        params_json_schema=CalculatorArgs.model_json_schema(),
-        on_invoke_tool=calculator_function
-    )
-
-    weather_tool = FunctionTool(
-        name="get_weather",
-        description="Get current weather information for a location",
-        params_json_schema=WeatherArgs.model_json_schema(),
-        on_invoke_tool=get_weather
-    )
-
     # Create agent with custom function tools
     agent = Agent(
         name="Multi-Tool Assistant",
@@ -108,7 +91,7 @@ async def run_function_tools_agent():
         Use the calculator tool for mathematical operations.
         Use the weather tool to provide weather information.
         Always explain your reasoning and show the results clearly.""",
-        tools=[calculator_tool, weather_tool],
+        tools=[calculator, get_weather],
         model="gpt-4o"
     )
 

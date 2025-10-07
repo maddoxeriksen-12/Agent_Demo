@@ -6,8 +6,7 @@ Demonstrates an agent running in a loop with web search capabilities
 import asyncio
 import os
 from openai import AsyncOpenAI
-from agents import Agent, Runner
-from agents.tools import WebSearchTool
+from agents import Agent, Runner, WebSearchTool
 
 
 async def run_web_search_agent():

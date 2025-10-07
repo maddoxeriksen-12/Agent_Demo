@@ -294,8 +294,8 @@ DASHBOARD_TEMPLATE = '''
 
             <div class="agent-card">
                 <div class="icon">⚡</div>
-                <h2>Realtime Agent</h2>
-                <p>A realtime agent with streaming capabilities. Demonstrates the structure for voice/realtime interactions.</p>
+                <h2>Streaming Agent</h2>
+                <p>An agent with real-time streaming text responses. Demonstrates streaming capabilities and live response generation.</p>
                 <button class="run-btn" onclick="runAgent('realtime', this)">Run Agent</button>
                 <div class="result" id="result-realtime"></div>
             </div>
