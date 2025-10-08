@@ -5,7 +5,12 @@ Demonstrates an agent running in a loop with web search capabilities
 
 import asyncio
 import os
+from pathlib import Path
+from dotenv import load_dotenv
 from agents import Agent, Runner, WebSearchTool
+
+# Load environment variables
+load_dotenv(Path(__file__).parent / '.env')
 
 
 async def run_web_search_agent():
@@ -38,8 +43,11 @@ async def run_web_search_agent():
 
         # Run agent with streaming
         result = Runner.run_streamed(starting_agent=agent, input=query)
-        async for chunk in result.stream_text():
-            print(chunk, end="", flush=True)
+        async for event in result.stream_events():
+            if event.type == 'raw_response_event':
+                if hasattr(event, 'data') and event.data.__class__.__name__ == 'ResponseTextDeltaEvent':
+                    if hasattr(event.data, 'delta'):
+                        print(event.data.delta, end="", flush=True)
 
         print("\n" + "-" * 50)
 
