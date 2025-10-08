@@ -6,10 +6,7 @@ Demonstrates how to create and use custom function tools
 import asyncio
 import os
 import json
-from typing import Dict, Any
-from openai import AsyncOpenAI
 from agents import Agent, Runner, function_tool
-from pydantic import BaseModel, Field
 
 
 # Custom function implementations using @function_tool decorator
@@ -81,9 +78,6 @@ def get_weather(location: str, units: str = "fahrenheit") -> str:
 async def run_function_tools_agent():
     """Run an agent with custom function tools"""
 
-    # Initialize OpenAI client
-    client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
-
     # Create agent with custom function tools
     agent = Agent(
         name="Multi-Tool Assistant",
@@ -94,9 +88,6 @@ async def run_function_tools_agent():
         tools=[calculator, get_weather],
         model="gpt-4o"
     )
-
-    # Create runner
-    runner = Runner(client=client, agent=agent)
 
     print("Function Tools Agent initialized successfully!")
     print("Agent has calculator and weather lookup capabilities.")
@@ -115,9 +106,9 @@ async def run_function_tools_agent():
         print("Agent: ", end="", flush=True)
 
         # Run agent with streaming
-        async with runner.run_stream(query) as stream:
-            async for chunk in stream.text_stream():
-                print(chunk, end="", flush=True)
+        result = Runner.run_streamed(starting_agent=agent, input=query)
+        async for chunk in result.stream_text():
+            print(chunk, end="", flush=True)
 
         print("\n" + "-" * 50)
 

@@ -5,15 +5,11 @@ Demonstrates an agent running in a loop with web search capabilities
 
 import asyncio
 import os
-from openai import AsyncOpenAI
 from agents import Agent, Runner, WebSearchTool
 
 
 async def run_web_search_agent():
     """Run an agent with web search capabilities in a loop"""
-
-    # Initialize OpenAI client
-    client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
     # Create agent with web search tool
     agent = Agent(
@@ -24,9 +20,6 @@ async def run_web_search_agent():
         tools=[WebSearchTool()],
         model="gpt-4o"
     )
-
-    # Create runner
-    runner = Runner(client=client, agent=agent)
 
     print("Web Search Agent initialized successfully!")
     print("Agent will answer questions using web search.")
@@ -44,9 +37,9 @@ async def run_web_search_agent():
         print("Agent: ", end="", flush=True)
 
         # Run agent with streaming
-        async with runner.run_stream(query) as stream:
-            async for chunk in stream.text_stream():
-                print(chunk, end="", flush=True)
+        result = Runner.run_streamed(starting_agent=agent, input=query)
+        async for chunk in result.stream_text():
+            print(chunk, end="", flush=True)
 
         print("\n" + "-" * 50)
 

@@ -5,7 +5,6 @@ Demonstrates an agent with streaming text responses
 
 import asyncio
 import os
-from openai import AsyncOpenAI
 from agents import Agent, Runner
 
 
@@ -14,9 +13,6 @@ async def run_realtime_simple():
 
     print("Streaming Agent Example")
     print("-" * 50)
-
-    # Initialize OpenAI client
-    client = AsyncOpenAI(api_key=os.environ.get("OPENAI_API_KEY"))
 
     # Create agent with streaming
     agent = Agent(
@@ -27,9 +23,6 @@ async def run_realtime_simple():
         You can help with questions, calculations, and general assistance.""",
         model="gpt-4o"
     )
-
-    # Create runner
-    runner = Runner(client=client, agent=agent)
 
     print("Streaming Agent initialized successfully!")
     print("Demonstrating real-time streaming responses...")
@@ -47,9 +40,9 @@ async def run_realtime_simple():
         print("Agent: ", end="", flush=True)
 
         # Run agent with streaming
-        async with runner.run_stream(query) as stream:
-            async for chunk in stream.text_stream():
-                print(chunk, end="", flush=True)
+        result = Runner.run_streamed(starting_agent=agent, input=query)
+        async for chunk in result.stream_text():
+            print(chunk, end="", flush=True)
 
         print("\n" + "-" * 50)
 
